@@ -1,0 +1,321 @@
+---
+title: "w04-hw-syang118"
+author: "Seonhye Yang, NetID: syang118"
+date: "6/9/2019"
+output: html_document
+---
+
+##Exercise 1 (Using lm)
+```{r}
+library(broom)
+nutrition <- read.csv("nutrition-2018.csv")
+
+```
+
+```{r}
+#a
+calories <- lm(Calories~Fat+Sugar+Sodium, data = nutrition)
+summary(calories)
+f <- summary(calories)$fstatistic
+```
+$H_0: \hat{\beta_1}= \hat{\beta_2} = \hat{\beta_3}=0$
+
+$H_1:$ At least one of $\beta_i \ne 0, i = 1, 2, 3$
+
+$F-Statistics = 6590.94$
+
+$p-value = 0$
+
+Reject Null at $\alpha = 0.01$
+
+The calories model has a linear relationship. 
+
+```{r}
+#b
+coefficients = summary(calories)$coefficients
+cbind(coefficients[, 1])
+```
+$\hat{\beta_0}$ is 100.46 which indicates that the calorie model has a calorie of 100.46 when there's zero fat, sugar and sodium. 
+
+$\hat{\beta_1}$ is 8.483 which indicates that the variable fat increases by one unit, sugar and sodium increases by 8.483. 
+
+$\hat{\beta_2}$ is 3.901 which indicates that the variable sugar increases by one unit, fat and sodium increases by 3.901. 
+
+$\hat{\beta_3}$ is 0.00617 which indicates that the variable sodium increases by one unit, fat and sugar increases by 0.00617. 
+
+
+```{r}
+#c
+big_mac = data.frame(Fat = 28, Sugar = 9, Sodium = 950)
+predict(calories, big_mac)
+```
+
+```{r}
+#d
+sd(nutrition$Calories) #sy
+summary(calories)$sigma
+```
+168.05 is an estimate of how mcuh Calories varies more specifically how the actual data differs within the mean. 
+
+80.8543 is an estimate of how much the model's residuals vary specifically how the actual data differs within the fitted regression model. 
+
+
+```{r}
+#e
+summary(calories)$r.squared
+```
+$76.86\%$ of the observed variation in the data is explained by the linear model with the predictors Fat, Sugar and Sodium. 
+
+```{r}
+#f
+confint(calories, level = 0.95)[3, ]
+```
+We are $95\%$ confident that as the variable sugar increases by unit, the change mean Calories will be in this interval. 
+
+```{r}
+#g
+confint(calories, level = 0.99)[1, ]
+```
+We are $99\%$ confident that when all three variables are equal to zero, the mean Calories will be in this interval. 
+
+```{r}
+#h
+large_fries = data.frame(Fat = 24, Sugar = 0, Sodium = 350)
+predict(calories, large_fries, level = 0.90, interval = "confidence")
+
+```
+We are $90\%$ confident that when Fat = 24, Sugar = 0 and Sodium = 350 , the mean Calories will be in this interval.
+
+```{r}
+#i
+taco_bell = data.frame(Fat = 21, Sugar = 6, Sodium = 1200)
+predict(calories, taco_bell, level = 0.90, interval = "confidence")
+
+```
+We are $90\%$ confident that when Fat = 21, Sugar = 6 and Sodium = 1200 , the mean Calories will be in this interval.
+
+##Exercise 2 (More lm for Multiple Regression)
+```{r}
+goalies <- read.csv("goalies.csv")
+```
+
+```{r}
+model1 <- lm(W~GA+SV, data = goalies)
+model2 <- lm(W~GA+SV+SA+MIN+SO, data = goalies)
+model3 <- lm(W~., data = goalies)
+```
+
+```{r}
+#a
+anova(model1, model2)[, 5]
+anova(model1, model2)[, 6]
+
+```
+$H_0: \hat{\beta_1}= \hat{\beta_2} =0$ and $H_1: \hat{\beta_1} \neq 0$
+
+$F-Statistics = 462.5935$
+
+$p-value = 6.808247e^{-138}$
+
+Reject Null at $\alpha = 0.01$
+
+Model 2 is preferred since it has more predictors. 
+
+```{r}
+#a
+anova(model2, model3)[, 5]
+anova(model2, model3)[, 6]
+```
+
+$H_0: \hat{\beta_1}= \hat{\beta_2} = \hat{\beta_3}= \hat{\beta_4} =\hat{\beta_5}= 0$
+
+$H_1:$ At least of $\hat{\beta_i} \neq 0, i = 1, 2, 3, 4, 5$
+
+$F-Statistics = 462.5935$
+
+$p-value = 0.00735$
+
+Reject Null at $\alpha = 0.01$
+
+Model 3 is preferred since is has all the predictors. 
+
+```{r}
+summary(model3)
+```
+$t-value = -3.858$
+
+$p-value = 0.000131$
+
+Reject Null at $\alpha = 0.05$
+
+##Exercise 3
+```{r}
+data(Ozone, package = "mlbench")
+Ozone = Ozone[, c(4, 6, 7, 8)]
+colnames(Ozone) = c("ozone", "wind", "humidity", "temp") 
+Ozone = Ozone[complete.cases(Ozone), ]
+library(mlbench)
+Ozone
+```
+
+```{r}
+#a
+n = length(Ozone$ozone)
+X = cbind(rep(1, n), Ozone$wind, Ozone$humidity, Ozone$temp)
+y = Ozone$ozone
+
+beta_hat_no_lm = solve(t(X) %*% X) %*% t(X) %*% y
+beta_hat_no_lm
+sum(beta_hat_no_lm ^ 2)
+```
+
+```{r}
+#b
+model <- lm(ozone~ wind + humidity + temp,data =Ozone)
+coeffs = model$coefficients
+beta_hat_lm = as.vector(coeffs)
+beta_hat_lm
+sum(beta_hat_lm ^ 2)
+```
+
+```{r}
+#c
+all.equal(beta_hat_lm, beta_hat_no_lm)
+```
+
+```{r}
+#d
+p = length(coef(model))
+y_hat = X %*% solve(t(X) %*% X) %*% t(X) %*% y
+e     = y - y_hat
+s_e <- sqrt(t(e) %*% e / (n - p))
+s_e
+
+model_se <- summary(model)$sigma
+all.equal(as.vector(s_e), model_se)
+```
+
+```{r}
+sse = sum(crossprod(y - y_hat, y - y_hat))
+sst = sum(crossprod(y - mean(y), y - mean(y)))
+r2 = 1 - sse / sst
+```
+
+## Exercise 4
+```{r}
+library(ISLR)
+d = data.frame(subset(Auto, select = -c(name)))
+```
+
+```{r}
+set.seed(1)
+auto_trn_idx = sample(1:nrow(d), 292)
+auto_trn = d[auto_trn_idx,]
+auto_tst = d[-auto_trn_idx,]
+```
+
+```{r}
+full_m <- lm(mpg ~ ., data=auto_trn)
+disp_m <- lm(mpg ~ displacement, data=auto_trn)
+one_m <- lm(mpg ~ cylinders + horsepower + weight + displacement + year, data=auto_trn)
+two_m <- lm(mpg ~ displacement + horsepower + weight, data=auto_trn)
+three_m <- lm(mpg ~ year + origin, data=auto_trn)
+```
+
+```{r}
+full_rmse <- sqrt((c(crossprod(full_m$residuals)))/length(full_m$residuals))
+disp_rmse <- sqrt((c(crossprod(disp_m$residuals)))/length(disp_m$residuals))
+one_rmse <- sqrt((c(crossprod(one_m$residuals)))/length(one_m$residuals))
+two_rmse <- sqrt((c(crossprod(two_m$residuals)))/length(two_m$residuals))
+three_rmse <- sqrt((c(crossprod(three_m$residuals)))/length(three_m$residuals))
+```
+
+```{r}
+full_test_rmse = sqrt(mean((auto_tst$mpg - predict.lm(full_m, auto_tst)) ^ 2))
+disp_test_rmse = sqrt(mean((auto_tst$mpg - predict.lm(disp_m, auto_tst)) ^ 2))
+one_test_rmse = sqrt(mean((auto_tst$mpg - predict.lm(one_m, auto_tst)) ^ 2))
+two_test_rmse = sqrt(mean((auto_tst$mpg - predict.lm(two_m, auto_tst)) ^ 2))
+three_test_rmse = sqrt(mean((auto_tst$mpg - predict.lm(three_m, auto_tst)) ^ 2))
+```
+
+|                         | Train RMSE     | Test RMSE           |
+|-------------------------|----------------|---------------------|
+| Full Model              | `r full_rmse`  | `r full_test_rmse`  |
+| Displacement Only Model | `r disp_rmse`  | `r disp_test_rmse`  |
+| Model One               | `r one_rmse`   | `r one_test_rmse`   |
+| Model Two               | `r two_rmse`   | `r two_test_rmse`   |
+| Model Three             | `r three_rmse` | `r three_test_rmse` |
+
+
+From the computed RMSE values, we can see that "Model One", consisting of cylinders + horsepower + weight + displacement + year is the best model as it has the lowest Training RMSE, and the lowest Test RMSE, showing that the model adapts well to new data and retains a low error.
+
+## Exercise 5
+```{r}
+set.seed(420)
+n = 42
+
+b0 = 2
+b1 = -0.75
+b2 = 1.5
+b3 = 0
+b4 = 0
+b5 = 0
+sigmasq = 25
+
+beta_hat_1 = rep(0, 2500)
+beta_3_pval = rep(0, 2500)
+beta_5_pval = rep(0, 2500)
+
+x0 = rep(1, n)
+x1 = rnorm(n, mean = 0, sd = 2)
+x2 = runif(n, min = 0, max = 4)
+x3 = rnorm(n, mean = 0, sd = 2)
+x4 = runif(n, min = -2, max = 2)
+x5 = rnorm(n, mean = 0, sd = 2)
+
+X = cbind(x1, x2, x3, x4, x5)
+C = solve(t(X)%*%X)
+y = rep(0, n)
+sum(diag(C))
+
+eps = rnorm(n, mean = 0, sd = sigmasq)
+y = b0 + b1 * x1 + b2 + x2 + b3 + x3 + b4 + x4 + b5 * x5 + eps
+sim_data = data.frame(x1, x2, x3, x4, x5, y)
+sum(sim_data[5,])
+
+for (i in 1:2500) {
+  eps = rnorm(n, mean = 0, sd = 5)
+  y = b0 + b1 * x1 + b2 + x2 + b3 + x3 + b4 + x4 + b5 * x5 + eps
+  sim_data$y = y
+  cc = coef(lm(y ~ x1 + x2 + x3 + x4 + x5, data = sim_data))
+  xx = anova(lm(y ~ x1 + x2 + x3 + x4 + x5, data = sim_data))$`Pr(>F)`
+  beta_hat_1[i] = cc[[2]]
+  beta_3_pval[i] = xx[[3]]
+  beta_5_pval[i] = xx[[5]]
+}
+
+mean(beta_hat_1)
+var(beta_hat_1)
+length(beta_3_pval[beta_3_pval < 0.1])/length(beta_3_pval)
+length(beta_3_pval[beta_5_pval < 0.01])/length(beta_5_pval)
+
+hist(beta_hat_1, prob = TRUE, breaks = 20, 
+               xlab = expression(hat(beta)[2]), main = "", border = "dodgerblue")
+curve(dnorm(x, mean = b1, sd = sqrt(sigmasq * C[2 + 1, 2 + 1])), 
+      col = "darkorange", add = TRUE, lwd = 3)
+```
+
+We can see from the printed results the following values:
+
+### a
+The sum of the diagonal of the $C$ matrix is $0.04570045$. The sum of the 5th row of values in our $sim_data$ matrix is $-20.59066$. 
+
+### e
+Aside from this, the mean of beta_hat_1 is $-0.7456336$ which is very close to the actual value of $-0.75$. In addition the variance is $0.185304$. These values are in line with what we should be expecting, espicially with our simulated value being so close to the actual beta value. From the plot of the histagram, the true distribution is basically a perfect match for our simulation.
+
+### f
+The proportion of p-values stored in beta_3_pval less than $0.10$ is 0.8212 This is what we would expect because our true value is zero, so there should be a large proportion of significant values.
+
+### g
+The proportion of p-values stored in beta_5_pval less than $0.01$ is 0.0116. This result is surprising, as our true value is zero, so there should be a higher proportion of beta_5 values that were tested to be significant to $0.01$.
+`

@@ -1,0 +1,291 @@
+---
+title: "w03-hw-syang118"
+author: "Seonhye Yang, NetID: syang118"
+date: "6/3/2019"
+output: html_document
+---
+
+```{r}
+library(MASS)
+```
+
+##Exercise 1 (Using lm for Inference)
+```{r}
+cat_model <- lm(Hwt~Bwt, data = cats)
+summary(cat_model)$coefficients
+```
+
+$H_0: \hat{\beta_1} = 0$ and $H_1: \hat{\beta_1} \neq 0$
+```{r}
+summary(cat_model)$coefficients[, 3]
+```
+$t-value = 16.1193908$
+```{r}
+summary(cat_model)$coefficients[, 4]
+```
+$p-value = 6.969045e^{-34}$
+Reject null at $\alpha = 0.05$
+Since we rejected the null hypothesis, there is a linear relationship between Heart weight and Body weight. 
+
+```{r}
+#b
+confint(cat_model, parm = "Bwt", level = 0.90)
+```
+
+```{r}
+#c
+confint(cat_model, parm = "(Intercept)", level = 0.99)
+```
+```{r}
+#d
+mean <- data.frame(Bwt = c(2.1, 2.8))
+mean(cats$Bwt)
+interval<-predict(cat_model, mean, interval = "confidence", level = 0.99)
+interval[1,] #99% confident that body weight = 2.1kg is in this interval 
+interval[2,] #99% confident that body weight = 2.8kg is in this interval
+
+abs(interval[1, 2] - interval[1, 3]) #body weight = 2.1kg
+abs(interval[2, 2] - interval[2, 3]) #body weight = 2.8kg
+```
+We can see that that the confidence interval for body weight = 2.1kg is larger because it's furthest away from the mean = 2.723611. Whereas body weight = 2.8kg has a small interval because it's closest to the mean. 
+
+```{r}
+#e
+mean_1 <- data.frame(Bwt = c(2.8, 4.2))
+interval<-predict(cat_model, mean_1, interval = "confidence", level = 0.99)
+interval[1,] #99% confident that body weight = 2.8kg is in this interval 
+interval[2,] #99% confident that body weight = 4.2kg is in this interval
+```
+
+```{r}
+#f
+cats_grid = seq(min(cats$Bwt), max(cats$Bwt), by = 0.01)
+
+plot(Hwt~Bwt, data = cats, xlab = "Body Weight", ylab = "Heart Weight", main = "Heart weight vs Body weight")
+abline(cat_model, lwd = 5, col = "darkorange")
+
+CI = predict(cat_model, data.frame(Bwt = cats_grid), interval = "confidence", level = 0.99) 
+PI = predict(cat_model, data.frame(Bwt = cats_grid), interval = "prediction", level = 0.99)
+
+lines(cats_grid, CI[,"lwr"], col = "dodgerblue", lwd = 3, lty = 2)
+lines(cats_grid, CI[,"upr"], col = "dodgerblue", lwd = 3, lty = 2)
+lines(cats_grid, PI[,"lwr"], col = "dodgerblue", lwd = 3, lty = 3)
+lines(cats_grid, PI[,"upr"], col = "dodgerblue", lwd = 3, lty = 3)
+points(mean(cats$Bwt), mean(cats$Hwt), pch = "+", cex = 3)
+```
+
+```{r}
+#g
+m <- lm(Hwt~Bwt, data = cats, offset = 4 * Bwt)
+summary(cat_model)$coefficients
+summary(m)$coefficients
+
+```
+We can see from this result that when $\beta_1 = 4$, we see that $P=0.89$ thus we do not reject the null hypothesis with $\alpha = 0.05$ and a test statistic of $0.1361$
+##Exercise 2
+```{r}
+library(mlbench)
+data(Ozone, package = "mlbench")
+Ozone = Ozone[, c(4, 6, 7, 8)]
+colnames(Ozone) = c("ozone", "wind", "humidity", "temp") 
+Ozone = Ozone[complete.cases(Ozone), ]
+```
+
+```{r}
+#a
+ozone_wind_model <- lm(ozone~wind, data = Ozone)
+summary(ozone_wind_model)$coefficients
+```
+
+$H_0: \hat{\beta_1} = 0$ and $H_1: \hat{\beta_1} \neq 0$
+```{r}
+summary(ozone_wind_model)$coefficients[, 3]
+```
+$t-value = 16.1193908$
+```{r}
+summary(ozone_wind_model)$coefficients[, 4]
+```
+
+$p-value = 0.8267954$
+Fail to reject null at $\alpha = 0.01$
+Since we fail to reject the null hypothesis, there is no linear relationship between Ozone and Wind.
+
+```{r}
+#b
+ozone_temp_model <- lm(ozone~temp, data = Ozone)
+summary(ozone_temp_model)$coefficients
+```
+
+$H_0: \hat{\beta_1} = 0$ and $H_1: \hat{\beta_1} \neq 0$
+```{r}
+summary(ozone_temp_model)$coefficients[, 3]
+```
+$t-value = 22.84896$
+```{r}
+summary(ozone_temp_model)$coefficients[, 4]
+```
+
+$p-value = 8.153764e^{-71}$
+Reject null at $\alpha = 0.01$
+Since we reject the null hypothesis, there is linear relationship between Ozone and Temperature.
+
+
+##Exercise 3
+```{r}
+birthday = 19951214 
+set.seed(birthday)
+sample_size = 100
+x = seq(0, 10, length = sample_size)
+
+beta_0 = -5
+beta_1 = 3.25
+sigma  = 4
+
+num_samples = 2000
+beta_0_hats = rep(0, num_samples)
+beta_1_hats = rep(0, num_samples)
+
+for (i in 1:num_samples) {
+  eps = rnorm(sample_size, mean = 0, sd = sigma)
+  y   = beta_0 + beta_1 * x + eps
+  
+  sim_model = lm(y ~ x)
+  
+  beta_0_hats[i] = coef(sim_model)[1]
+  beta_1_hats[i] = coef(sim_model)[2]
+}
+```
+
+```{r}
+#b
+beta_0
+beta_1
+
+mean(beta_0_hats)
+mean(beta_1_hats)
+
+Sxx = sum((x - mean(x)) ^ 2)
+sd_of_beta_0 = sqrt((var_beta_0_hat = sigma ^ 2 * (1 / sample_size + mean(x) ^ 2 / Sxx)))#sd of beta_0
+sd_of_beta_1 = sqrt(sigma^2/Sxx)
+
+sd(beta_0_hats) #sd of beta_0_hats
+sd(beta_1_hats) #sd of beta_1_hats
+
+library(knitr)
+output <- data.frame(
+  Names = c("true expected", "mean of simulated", "true sd", "sd of simulated"),
+  beta_hat_0 = c(beta_0, mean(beta_0_hats), sd_of_beta_0, sd(beta_0_hats)),
+  beta_hat_1 = c(beta_1, mean(beta_1_hats), sd_of_beta_1, sd(beta_1_hats)))
+kable(head(output), caption = "table of betas")
+```
+
+```{r}
+par(mfrow = cbind(1,2))
+hist_beta_0 = hist(beta_0_hats, prob = TRUE, breaks = 25, 
+     xlab = expression(hat(beta)[0]), main = "", border = "dodgerblue")
+curve(dnorm(x, mean = beta_0, sd = sqrt(var_beta_0_hat)),
+      col = "darkorange", add = TRUE, lwd = 3)
+
+hist_beta_1 = hist(beta_1_hats, prob = TRUE, breaks = 25, 
+     xlab = expression(hat(beta)[1]), main = "", border = "dodgerblue")
+curve(dnorm(x, mean = beta_1, sd = sqrt(sigma^2/Sxx)),
+      col = "darkorange", add = TRUE, lwd = 3)
+```
+
+##Exercise 4 (Simulating Confidence Intervals)
+```{r}
+#a
+birthday = 19951214 
+set.seed(birthday)
+sample_size = 25
+x = seq(0, 2.5, length = sample_size)
+
+beta_0 = 5
+beta_1 = 2
+sigma  = 3
+
+num_samples = 2500
+beta_1_hats = rep(0, num_samples)
+s_e = rep(0, num_samples)
+
+for (i in 1:num_samples) {
+  eps = rnorm(sample_size, mean = 0, sd = sigma)
+  y   = beta_0 + beta_1 * x + eps
+  
+  sim_model = lm(y ~ x)
+  
+  beta_1_hats[i] = coef(sim_model)[1]
+  s_e[i] = summary(sim_model)$sigma
+}
+```
+
+```{r}
+#b
+alpha_level = 0.05
+critical_value = abs(qt(alpha_level/ 2, df = sample_size - 2))
+Sxx = sum((x - mean(x)) ^ 2)
+lower_95 = beta_1_hats - critical_value * s_e/sqrt(Sxx)
+upper_95 = beta_1_hats + critical_value * s_e/sqrt(Sxx)
+```
+
+```{r}
+#c
+mean(lower_95 < 5 & 5 < upper_95)
+```
+$84.32\%$ of the portion contains the true value of $\hat{\beta_1}$
+
+```{r}
+#d
+null <- mean(lower_95 < 0 & 0 < upper_95)
+1-null
+```
+We would reject at the portion of $99.84\%$
+```{r}
+#e
+alpha_level = 0.01
+critical_value = abs(qt(alpha_level/ 2, df = sample_size - 2))
+Sxx = sum((x - mean(x)) ^ 2)
+lower_99 = beta_1_hats - critical_value * s_e/sqrt(Sxx)
+upper_99 = beta_1_hats + critical_value * s_e/sqrt(Sxx)
+```
+
+```{r}
+#f
+mean(lower_99 < 5 & 5 < upper_99)
+```
+$93.76\%$ of the portion contains the true value of $\hat{\beta_1}$
+```{r}
+#g
+null<- mean(lower_99 < 0 & 0 < upper_99)
+1 - null
+```
+We would reject at the portion of $98.96\%$
+
+##Exercise 5 (Prediction Intervals)
+```{r}
+calc_pred_int <- function(model, newdata, level=0.95) {
+  z <- predict(cat_model, newcat_1, se.fit=TRUE)
+  Qt <- c(-1, 1) * qt((1 - level) / 2, z$df, lower.tail = FALSE)
+  se.PI <- sqrt(z$se.fit ^ 2 + z$residual.scale ^ 2)
+  PI <- z$fit + outer(se.PI, Qt)
+  return(c(estimate = as.numeric(z$fit), lower = PI[[1]], upper = PI[[2]]))
+}
+
+newcat_1 = data.frame(Bwt = 4.0)
+calc_pred_int(cat_model, newcat_1)
+# And for comparison
+predict(cat_model, newcat_1, interval = "prediction", level=0.95)
+
+newcat_2 = data.frame(Bwt = 3.3)
+calc_pred_int(cat_model, newcat_2, level = 0.99)
+# And for comparison
+predict(cat_model, newcat_1, interval = "prediction", level=0.99)
+```
+
+
+
+
+
+
+
+
